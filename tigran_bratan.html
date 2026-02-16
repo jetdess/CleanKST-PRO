@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CleanKst PRO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0061ff;
+            --primary-grad: linear-gradient(135deg, #0061ff 0%, #60efff 100%);
+            --bg: #f8f9fa; --white: #ffffff; --text: #1c1e21; --gray: #65676b;
+            --success: #00b894; --danger: #d63031; --warning: #fdcb6e;
+            --shadow: 0 12px 30px rgba(0,0,0,0.06);
+        }
+
+        * { box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { margin: 0; background: #cfd8dc; display: flex; justify-content: center; }
+
+        .app-shell { width: 100%; max-width: 430px; height: 100vh; background: var(--bg); position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.2); }
+        
+        .screen { display: none; flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 100px; scroll-behavior: smooth; }
+        .screen.active { display: flex; flex-direction: column; animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* UI Elements */
+        .card { background: var(--white); border-radius: 24px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.5); }
+        
+        .btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 15px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn-p { background: var(--primary-grad); color: white; box-shadow: 0 8px 20px rgba(0, 97, 255, 0.25); }
+        .btn-ghost { background: #eff2f5; color: var(--text); }
+        
+        input, select, textarea { width: 100%; padding: 15px; border: 1px solid #e0e0e0; border-radius: 16px; margin-top: 8px; font-size: 14px; background: #fdfdfd; font-weight: 500; transition: 0.3s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(0, 97, 255, 0.1); }
+        label { font-size: 11px; font-weight: 800; color: var(--gray); margin-top: 15px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .price-display { font-size: 30px; font-weight: 800; color: var(--primary); text-align: center; margin: 15px 0; letter-spacing: -1px; }
+
+        /* Admin Status Dots */
+        .status-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .dot-green { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .dot-red { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+        .dot-yellow { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+
+        /* Tabs */
+        .tabs { display: flex; background: #e0e0e0; border-radius: 16px; padding: 4px; margin-bottom: 20px; }
+        .tab { flex: 1; text-align: center; padding: 10px; border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 700; color: #666; transition: 0.3s; }
+        .tab.active { background: var(--white); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        /* Обновленная навигация (Dark Glass) */
+        .debug-bar { 
+            position: absolute; bottom: 20px; left: 20px; right: 20px;
+            background: rgba(28, 30, 33, 0.95); /* Темная основа */
+            backdrop-filter: blur(12px);
+            padding: 10px; border-radius: 30px; display: flex; justify-content: space-around; z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .debug-item { 
+            color: rgba(255,255,255,0.5); 
+            font-size: 9px; text-align: center; cursor: pointer; transition: 0.3s; width: 50px; 
+        }
+        
+        .debug-item i { 
+            font-size: 18px; margin-bottom: 4px; display: block; 
+        }
+        
+        .debug-item.active { 
+            color: var(--white); 
+            transform: translateY(-2px); 
+        }
+        
+        .debug-item.active i { 
+            color: var(--accent); /* Наш фирменный желтый */
+            text-shadow: 0 0 12px rgba(255, 214, 0, 0.6); /* Эффект свечения */
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+    <div id="scr-login" class="screen active">
+        <div style="text-align:center; padding: 60px 0 40px;">
+            <div style="width: 80px; height: 80px; background: var(--primary-grad); border-radius: 26px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 40px rgba(0,97,255,0.3);">
+                <i class="fas fa-gem" style="color: white; font-size: 36px;"></i>
+            </div>
+            <h1 style="margin: 20px 0 5px; font-weight: 800; font-size: 26px;">CleanKst <span style="color:var(--primary)">PRO</span></h1>
+            <p style="color: var(--gray); font-size: 13px; font-weight: 500;">Премиальный клининговый сервис Костаная</p>
+        </div>
+        <div class="card">
+            <label>Доступ</label>
+            <input type="text" id="log-user" placeholder="Телефон или логин">
+            <label>Пароль</label>
+            <input type="password" placeholder="••••••••">
+            <button class="btn btn-p" style="margin-top: 25px;" onclick="handleAuth()">Войти</button>
+            <button class="btn btn-ghost" style="margin-top: 10px;" onclick="nav('scr-reg')">Регистрация</button>
+        </div>
+    </div>
+
+    <div id="scr-reg" class="screen">
+        <h2 style="font-weight: 800; margin-bottom: 5px;">Новый клиент</h2>
+        <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Создайте аккаунт за пару секунд</p>
+        <div class="card">
+            <label>Имя</label><input type="text" placeholder="Богдан">
+            <label>Телефон</label><input type="tel" placeholder="+7 707...">
+            <label>Пароль</label><input type="password">
+            <button class="btn btn-p" style="margin-top: 25px;" onclick="alert('Аккаунт создан!'); nav('scr-login')">Зарегистрироваться</button>
+            <button class="btn btn-ghost" style="margin-top: 10px;" onclick="nav('scr-login')">Назад</button>
+        </div>
+    </div>
+
+    <div id="scr-client" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <div>
+                <p style="font-size:11px; font-weight:700; color:var(--gray); margin:0;">г. Костанай</p>
+                <h2 style="margin:0; font-weight:800;">Привет, Богдан!</h2>
+            </div>
+            <div onclick="logout()" style="background:white; width:40px; height:40px; border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); cursor:pointer;"><i class="fas fa-sign-out-alt" style="color:#d63031;"></i></div>
+        </div>
+        
+        <div class="card" style="border-left: 4px solid var(--primary);">
+            <label>Адрес объекта</label>
+            <input type="text" id="c-addr" value="пр. Нурсултана Назарбаева, 239">
+            
+            <label>Тип помещения</label>
+            <select id="c-type" onchange="calcPrice()">
+		<option value="10000">Студия (Стандарт)</option>
+                <option value="12000">1-к квартира (Стандарт)</option>
+                <option value="18000">2-к квартира (Стандарт)</option>
+                <option value="25000">3-к квартира (Стандарт)</option>
+                <option value="CUSTOM">Нестандартный объект</option>
+            </select>
+
+            <div id="standard-block">
+                <label>Услуга</label>
+                <select id="c-srv" onchange="calcPrice()">
+                    <option value="1">Поддерживающая</option>
+                    <option value="1.6">Генеральная (x1.6)</option>
+                    <option value="2.5">После ремонта (x2.5)</option>
+                </select>
+            </div>
+
+            <label>Доп. информация</label>
+            <textarea id="c-info" rows="2" placeholder="Особенности объекта, код домофона..."></textarea>
+
+            <div class="price-display" id="c-total">12 000 ₸</div>
+            
+            <button class="btn btn-p" id="btn-order-text" onclick="createOrder()">
+                <span>Заказать</span> <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <h4 style="margin-left:10px; margin-bottom:10px;">История заказов</h4>
+        <div id="client-history"></div>
+    </div>
+
+    <div id="scr-admin" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; font-weight:800;">Админ-панель</h2>
+            <span style="font-size:10px; background:#dff9fb; color:#130f40; padding:5px 10px; border-radius:10px; font-weight:700;">ONLINE</span>
+        </div>
+        
+        <div class="card">
+            <h4 style="margin:0 0 15px 0;">Мониторинг бригад</h4>
+            <div id="brigades-monitor">
+                </div>
+        </div>
+
+        <h4 style="margin-left: 10px; margin-bottom: 10px;">Входящие заявки</h4>
+        <div id="admin-orders"></div>
+        
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn btn-ghost" onclick="resetApp()" style="width:auto; font-size:11px; padding:10px 20px;">🗑 Сброс базы</button>
+        </div>
+    </div>
+
+    <div id="scr-brig" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+                <h2 style="margin:0; font-weight:800;">Аблай</h2>
+                <p style="margin:0; font-size:11px; color:var(--gray);">Бригада №1</p>
+            </div>
+            <div onclick="logout()" style="cursor:pointer;"><i class="fas fa-sign-out-alt"></i></div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" id="t-obj" onclick="brTab('obj')">Объект</div>
+            <div class="tab" id="t-prof" onclick="brTab('prof')">Профиль</div>
+        </div>
+
+        <div id="br-obj-view">
+            <div id="br-active-job"></div>
+        </div>
+
+        <div id="br-prof-view" style="display:none;">
+            <div class="card">
+                <h4 style="margin-top:0;">Моя команда</h4>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; padding:10px; background:#f8f9fa; border-radius:12px;">
+                    <div style="width:30px; height:30px; background:#fab1a0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">В</div>
+                    <div><b>Вадим</b><br><small>Клинер</small></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; padding:10px; background:#f8f9fa; border-radius:12px;">
+                    <div style="width:30px; height:30px; background:#74b9ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">Т</div>
+                    <div><b>Тлеген</b><br><small>Клинер</small></div>
+                </div>
+                <div style="background:#fff0f0; border:1px solid #ff7675; padding:15px; border-radius:16px; color:#d63031; text-align:center;">
+                    Штрафы: <b>0 ₸</b>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-worker" class="screen">
+        <h2 style="font-weight:800; margin-bottom:20px;">Задачи: Вадим</h2>
+        <div id="worker-tasks"></div>
+    </div>
+
+    <div class="debug-bar">
+        <div class="debug-item active" onclick="nav('scr-login')" data-id="scr-login"><i class="fas fa-lock"></i>Вход</div>
+        <div class="debug-item" onclick="nav('scr-client')" data-id="scr-client"><i class="fas fa-user"></i>Богдан</div>
+        <div class="debug-item" onclick="nav('scr-admin')" data-id="scr-admin"><i class="fas fa-shield-alt"></i>Георгий</div>
+        <div class="debug-item" onclick="nav('scr-brig')" data-id="scr-brig"><i class="fas fa-hard-hat"></i>Аблай</div>
+        <div class="debug-item" onclick="nav('scr-worker')" data-id="scr-worker"><i class="fas fa-broom"></i>Вадим</div>
+    </div>
+
+</div>
+
+<script>
+    // --- DATABASE & PERSISTENCE ---
+    const defaultState = {
+        orders: [],
+        brigades: [
+            { id: 1, name: "Бригада 1 (Аблай)", status: "free" }, // free, busy, away
+            { id: 2, name: "Бригада 2 (Темирлан)", status: "busy" },
+            { id: 3, name: "Бригада 3 (Даулет)", status: "away" }
+        ],
+        brStep: 0,
+        assignments: {}
+    };
+
+    let DB = JSON.parse(localStorage.getItem('clean_db_v2')) || defaultState;
+
+    function saveDB() {
+        localStorage.setItem('clean_db_v2', JSON.stringify(DB));
+        render();
+    }
+
+    function resetApp() {
+        if(confirm('Сбросить базу данных?')) {
+            localStorage.removeItem('clean_db_v2');
+            DB = defaultState;
+            location.reload();
+        }
+    }
+
+    // --- NAVIGATION ---
+    function nav(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.debug-item').forEach(d => {
+            d.classList.toggle('active', d.getAttribute('data-id') === id);
+        });
+        render();
+    }
+
+    function handleAuth() {
+        const u = document.getElementById('log-user').value.toLowerCase();
+        if(u.includes('admin')) nav('scr-admin');
+        else if(u.includes('brig')) nav('scr-brig');
+        else nav('scr-client');
+    }
+    
+    function logout() { nav('scr-login'); }
+
+    // --- CLIENT LOGIC ---
+    function calcPrice() {
+        const type = document.getElementById('c-type').value;
+        const srv = document.getElementById('c-srv').value;
+        const disp = document.getElementById('c-total');
+        const btn = document.querySelector('#btn-order-text span');
+        const std = document.getElementById('standard-block');
+
+        if(type === 'CUSTOM') {
+            std.style.display = 'none';
+            disp.innerText = "Оценка админом";
+            disp.style.fontSize = "22px";
+            btn.innerText = "Отправить на проверку";
+        } else {
+            std.style.display = 'block';
+            disp.innerText = Math.round(parseInt(type) * parseFloat(srv)).toLocaleString() + " ₸";
+            disp.style.fontSize = "32px";
+            btn.innerText = "Заказать";
+        }
+    }
+
+    function createOrder() {
+        const typeSelect = document.getElementById('c-type');
+        const order = {
+            id: Date.now(),
+            addr: document.getElementById('c-addr').value,
+            typeName: typeSelect.options[typeSelect.selectedIndex].text,
+            price: document.getElementById('c-total').innerText,
+            info: document.getElementById('c-info').value,
+            isCustom: typeSelect.value === 'CUSTOM',
+            status: 'NEW',
+            tasks: ['Влажная уборка', 'Мытье окон', 'Санузел', 'Вынос мусора']
+        };
+        DB.orders.push(order);
+        saveDB();
+        alert(order.isCustom ? "Отправлено на оценку!" : "Заказ создан!");
+    }
+
+    // --- ADMIN LOGIC ---
+    function adminAssign(id) {
+        const o = DB.orders.find(x => x.id === id);
+        
+        // Логика для нестандартных заказов
+        if(o.isCustom) {
+            const p = document.getElementById(`price-${id}`).value;
+            if(!p) return alert("Введите цену!");
+            o.price = p + " ₸";
+            o.isCustom = false; // Теперь он стал обычным, но со спец. ценой
+        }
+
+        o.status = 'ASSIGNED';
+        DB.brigades[0].status = 'busy'; // Занимаем Аблая
+        DB.brStep = 0;
+        saveDB();
+        alert("Бригада Аблая назначена!");
+    }
+
+    // --- BRIGADIER LOGIC ---
+    function brAction(id) {
+        const o = DB.orders.find(x => x.id === id);
+        if(DB.brStep === 0) { o.status = 'ARRIVED'; DB.brStep = 1; }
+        else if(DB.brStep === 1) { o.status = 'IN_WORK'; DB.brStep = 2; }
+        else if(DB.brStep === 2) { o.status = 'DONE'; DB.brStep = 3; }
+        else if(DB.brStep === 3) { 
+            o.status = 'FINISHED'; 
+            DB.brStep = 0; 
+            DB.brigades[0].status = 'free'; // Освобождаем Аблая
+            alert("Объект закрыт!"); 
+        }
+        saveDB();
+    }
+
+    function setWorker(task, worker) {
+        DB.assignments[task] = worker;
+        saveDB();
+    }
+
+    function brTab(t) {
+        document.getElementById('br-obj-view').style.display = t === 'obj' ? 'block' : 'none';
+        document.getElementById('br-prof-view').style.display = t === 'prof' ? 'block' : 'none';
+        document.getElementById('t-obj').className = t === 'obj' ? 'tab active' : 'tab';
+        document.getElementById('t-prof').className = t === 'prof' ? 'tab active' : 'tab';
+    }
+
+    // --- RENDER ENGINE ---
+    function render() {
+        // CLIENT
+        document.getElementById('client-history').innerHTML = DB.orders.map(o => `
+            <div class="card" style="padding:15px; border-left:4px solid var(--primary);">
+                <div style="font-size:10px; font-weight:800; color:var(--primary); margin-bottom:5px;">${o.status}</div>
+                <b>${o.addr}</b><br>
+                <small>${o.typeName}</small>
+                <div style="margin-top:5px; font-weight:800;">${o.price}</div>
+            </div>
+        `).join('') || '<div style="text-align:center; color:#b2bec3; padding:20px;">Нет активных заказов</div>';
+
+        // ADMIN: BRIGADE MONITORING
+        document.getElementById('brigades-monitor').innerHTML = DB.brigades.map(b => {
+            let color = 'dot-green'; let text = 'Свободен';
+            if(b.status === 'busy') { color = 'dot-red'; text = 'На объекте'; }
+            if(b.status === 'away') { color = 'dot-yellow'; text = 'Перерыв'; }
+            return `
+            <div class="status-row">
+                <div style="display:flex; align-items:center;">
+                    <div class="status-dot ${color}"></div>
+                    <span style="font-weight:600; font-size:13px;">${b.name}</span>
+                </div>
+                <span style="font-size:10px; font-weight:700; color:${color === 'dot-green' ? 'var(--success)' : (color === 'dot-red' ? 'var(--danger)' : 'var(--warning)')}">
+                    ${text}
+                </span>
+            </div>`;
+        }).join('');
+
+        // ADMIN: ORDERS
+        const news = DB.orders.filter(o => o.status === 'NEW' || o.status === 'WAITING');
+        document.getElementById('admin-orders').innerHTML = news.map(o => `
+            <div class="card">
+                ${o.isCustom ? '<span style="background:#ff7675; color:white; font-size:10px; padding:3px 8px; border-radius:8px; font-weight:700;">НЕСТАНДАРТ</span>' : ''}
+                <div style="margin-top:5px; font-weight:700;">${o.addr}</div>
+                <div style="font-size:12px; margin:5px 0; background:#f1f2f6; padding:8px; border-radius:8px;">${o.info || 'Нет комментариев'}</div>
+                
+                ${o.isCustom ? 
+                    `<input type="number" id="price-${o.id}" placeholder="Цена (₸)" style="margin-bottom:10px;">` 
+                    : 
+                    `<div style="font-weight:800; margin-bottom:10px; color:var(--primary);">${o.price}</div>`
+                }
+                
+                <button class="btn btn-p" style="padding:12px; font-size:13px;" onclick="adminAssign(${o.id})">Назначить Аблая</button>
+            </div>
+        `).join('') || '<div style="text-align:center; color:#b2bec3;">Нет заявок</div>';
+
+        // BRIGADIER
+        const active = DB.orders.find(o => o.status !== 'FINISHED' && o.status !== 'NEW');
+        const brBox = document.getElementById('br-active-job');
+        if(!active) {
+            brBox.innerHTML = '<div class="card" style="text-align:center; padding:40px; color:#b2bec3;">Ожидайте назначения...</div>';
+        } else {
+            let label = "МЫ ПРИБЫЛИ";
+            let html = `<h3>${active.addr}</h3><p style="color:var(--text-light); font-size:13px;">${active.info}</p>`;
+            
+            if(DB.brStep === 1) {
+                label = "НАЧАТЬ РАБОТУ";
+                html += `<hr style="border:0; border-top:1px solid #eee; margin:15px 0;"><label>Распределить задачи:</label>`;
+                active.tasks.forEach(t => {
+                    html += `<div style="margin-bottom:8px; font-size:12px;"><b>${t}</b>
+                    <select style="padding:8px; margin-top:4px;" onchange="setWorker('${t}', this.value)">
+                        <option>Назначить...</option>
+                        <option ${DB.assignments[t]==='Вадим'?'selected':''}>Вадим</option>
+                        <option ${DB.assignments[t]==='Тлеген'?'selected':''}>Тлеген</option>
+                    </select></div>`;
+                });
+            } else if(DB.brStep === 2) {
+                label = "ЗАВЕРШИТЬ";
+                html += `<div style="background:#e0f2fe; color:#0984e3; padding:15px; border-radius:12px; text-align:center; font-weight:600; margin-top:15px;">Работы ведутся...</div>`;
+            } else if(DB.brStep === 3) {
+                label = "СДАТЬ ОБЪЕКТ";
+                html += `<div style="border:2px dashed #b2bec3; padding:30px; text-align:center; border-radius:16px; margin-top:15px; color:#b2bec3;"><i class="fas fa-camera" style="font-size:24px;"></i><br>Фотоотчет</div>`;
+            }
+            brBox.innerHTML = `<div class="card">${html}<button class="btn btn-p" style="margin-top:20px;" onclick="brAction(${active.id})">${label}</button></div>`;
+        }
+
+        // WORKER
+        const inWork = DB.orders.find(o => o.status === 'IN_WORK');
+        const wBox = document.getElementById('worker-tasks');
+        if(inWork) {
+            let list = "";
+            let hasTask = false;
+            for(let t in DB.assignments) {
+                if(DB.assignments[t] === 'Вадим') {
+                    hasTask = true;
+                    list += `<div class="card" style="display:flex; align-items:center; gap:15px;"><input type="checkbox" style="width:20px; height:20px;"> <b>${t}</b></div>`;
+                }
+            }
+            wBox.innerHTML = hasTask ? list : '<div style="text-align:center; padding:30px; color:#b2bec3;">Вас не назначили на задачи</div>';
+        } else {
+            wBox.innerHTML = '<div style="text-align:center; padding:30px; color:#b2bec3;">Пока отдыхаем</div>';
+        }
+    }
+
+    // Init
+    calcPrice();
+    render();
+</script>
+</body>
+</html>
